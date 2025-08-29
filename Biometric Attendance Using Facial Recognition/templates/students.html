@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students - Facial Recognition System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f4f4;
+        }
+        header {
+            background: #fff;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+        }
+        header h1 {
+            font-size: 20px;
+            color: #333;
+            margin: 0;
+            text-align: center;
+        }
+        .user-menu {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .user-icon {
+            width: 40px;
+            height: 40px;
+            background: grey;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            position: relative;
+        }
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            padding: 5px;
+            z-index: 1000;
+        }
+        .dropdown a {
+            display: block;
+            text-decoration: none;
+            color: black;
+            font-size: small;
+            padding: 5px 20px;
+            white-space: nowrap;
+        }
+        .dropdown a:hover {
+            background: #f0f0f0;
+        }
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 20px 40px;
+            display: flex;
+            gap: 20px;
+        }
+        .sidebar {
+            width: 200px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .sidebar h3 {
+            font-size: 16px;
+            color: #333;
+            margin: 0 0 15px;
+        }
+        .sidebar a {
+            display: block;
+            text-decoration: none;
+            color: #555;
+            font-size: 14px;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background: #f0f0f0;
+            color: #333;
+            font-weight: bold;
+        }
+        .content {
+            flex: 1;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 20px; 
+            display: block; 
+        }
+        .content h2 {
+            margin: 0 0 20px 0; 
+            font-size: 24px;
+            color: #333;
+        }
+        .search-bar {
+            margin-bottom: 20px;
+            width: 98%;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            outline: none;
+        }
+        .search-bar input:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px; 
+        }
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #f0f0f0;
+            font-weight: bold;
+        }
+        .action-buttons button {
+            padding: 5px 10px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .view-image {
+            background: #4CAF50;
+            color: white;
+        }
+        .edit {
+            background: #2196F3;
+            color: white;
+        }
+        .delete {
+            background: #f44336;
+            color: white;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        .modal-content img {
+            max-width: 100%;
+            height: auto;
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+        }
+        .pagination button:disabled {
+            background: #f0f0f0;
+            cursor: not-allowed;
+        }
+        .pagination span {
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+    <script>
+        let allStudents = []; // Store all students for filtering
+        let currentPage = 1; // Current page number
+        const studentsPerPage = 4; // Number of students per page
+
+        function toggleDropdown() {
+            let dropdown = document.getElementById("user-dropdown");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+
+        function fetchStudents() {
+            fetch('/get_students')
+                .then(response => response.json())
+                .then(data => {
+                    allStudents = data; // Store the full list of students
+                    currentPage = 1; // Reset to first page
+                    searchStudents(); // Render with search and pagination
+                })
+                .catch(error => console.error('Error fetching students:', error));
+        }
+
+        function renderStudents(students) {
+            const tbody = document.querySelector('#student-table tbody');
+            tbody.innerHTML = '';
+            const start = (currentPage - 1) * studentsPerPage;
+            const end = start + studentsPerPage;
+            const paginatedStudents = students.slice(start, end);
+
+            paginatedStudents.forEach(student => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${student.first_name} ${student.last_name}</td>
+                    <td>${student.student_ref_number}</td>
+                    <td>${student.index_number}</td>
+                    <td>${student.email}</td>
+                    <td>${student.course}</td>
+                    <td>${student.level}</td>
+                    <td class="action-buttons">
+                        <button class="view-image" onclick="viewImage('${student.image}')">View Image</button>
+                        <button class="edit" onclick="editStudent('${student.student_ref_number}')">Edit</button>
+                        <button class="delete" onclick="deleteStudent('${student.student_ref_number}')">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            updatePagination(students);
+        }
+
+        function updatePagination(students) {
+            const totalPages = Math.ceil(students.length / studentsPerPage);
+            const pagination = document.querySelector('.pagination');
+            pagination.innerHTML = `
+                <button onclick="prevPage()" ${currentPage === 1 ? 'disabled' : ''}>Back</button>
+                <span>Page ${currentPage} of ${totalPages}</span>
+                <button onclick="nextPage()" ${currentPage === totalPages ? 'disabled' : ''}>Forward</button>
+            `;
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                searchStudents();
+            }
+        }
+
+        function nextPage() {
+            const totalPages = Math.ceil(allStudents.length / studentsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                searchStudents();
+            }
+        }
+
+        function searchStudents() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const filteredStudents = allStudents.filter(student => {
+                const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
+                return fullName.includes(searchInput) ||
+                       student.student_ref_number.toLowerCase().includes(searchInput) ||
+                       student.index_number.toLowerCase().includes(searchInput);
+            });
+            currentPage = 1; // Reset to first page on new search
+            renderStudents(filteredStudents);
+        }
+
+        function viewImage(imageData) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = imageData ? `data:image/jpeg;base64,${imageData}` : '';
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        function editStudent(studentRefNumber) {
+            alert(`Edit student with Reference Number: ${studentRefNumber}`);
+            // Implement edit logic (e.g., redirect to an edit form or open a modal)
+        }
+
+        function deleteStudent(studentRefNumber) {
+            if (confirm(`Are you sure you want to delete student with Reference Number: ${studentRefNumber}?`)) {
+                fetch('/delete_student', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_ref_number: studentRefNumber })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    fetchStudents(); // Refresh the table
+                })
+                .catch(error => console.error('Error deleting student:', error));
+            }
+        }
+
+        window.onload = fetchStudents;
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Students - Facial Recognition System</h1>
+        <div class="user-menu">
+            <div class="user-icon" onclick="toggleDropdown()">👤</div>
+            <div class="dropdown" id="user-dropdown">
+                <a href="{{ url_for('admin_logout') }}">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard">
+        <div class="sidebar">
+            <h3>Admin Menu</h3>
+            <a href="{{ url_for('admin_dashboard') }}">Home</a>
+            <a href="{{ url_for('overview') }}">Overview</a>
+            <a href="{{ url_for('students') }}" class="active">Students</a>
+            <a href="{{ url_for('system_stats') }}">System Stats</a>
+            <a href="{{ url_for('enroll') }}">Enroll New Students</a>
+            <a href="{{ url_for('timetables') }}">Timetables</a>
+        </div>
+        
+        <div class="content">
+            <h2>Students Dashboard</h2>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search by name, reference number, or index number" onkeyup="searchStudents()">
+            </div>
+            <table id="student-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Student Reference Number</th>
+                        <th>Index Number</th>
+                        <th>Email</th>
+                        <th>Course</th>
+                        <th>Level</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div class="pagination"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="imageModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">×</span>
+            <img id="modalImage" src="" alt="Student Image">
+        </div>
+    </div>
+</body>
+</html>

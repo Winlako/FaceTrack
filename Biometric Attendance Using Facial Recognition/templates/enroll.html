@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enroll Student - Facial Recognition System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            min-height: 80vh;
+        }
+
+        header {
+            background: #fff;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: center;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 20px;
+            color: #333;
+            margin: 0;
+        }
+
+        .user-menu {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        .user-icon {
+            width: 40px;
+            height: 40px;
+            background: grey;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            padding: 5px;
+            z-index: 1000;
+        }
+
+        .dropdown a {
+            display: block;
+            text-decoration: none;
+            color: black;
+            font-size: small;
+            padding: 5px 20px;
+        }
+
+        .dropdown a:hover {
+            background: #f0f0f0;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            gap: 20px;
+        }
+
+        .sidebar {
+            width: 200px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .sidebar a {
+            display: block;
+            text-decoration: none;
+            color: #555;
+            font-size: 14px;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: #f0f0f0;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .content {
+            flex: 1;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .settings-form {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .form-section,
+        .camera-section {
+            flex: 1;
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        input,
+        select {
+            width: 90%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .camera-box {
+            height: 220px;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .preview-container img {
+            width: 100%;
+            max-width: 640px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button, .btn-file-upload {
+            width: 48%;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-file-upload {
+            background-color: #28a745;
+            color: white;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 90px;
+        }
+
+        .btn-file-upload input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Enroll Student - Facial Recognition System</h1>
+        <div class="user-menu">
+            <div class="user-icon" onclick="toggleDropdown()">👤</div>
+            <div class="dropdown" id="user-dropdown">
+                <a href="{{ url_for('admin_logout') }}">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard">
+        <div class="sidebar">
+            <h3>Admin Menu</h3>
+            <a href="{{ url_for('admin_dashboard') }}">Home</a>
+            <a href="{{ url_for('overview') }}">Overview</a>
+            <a href="{{ url_for('students') }}">Students</a>
+            <a href="{{ url_for('system_stats') }}">System Stats</a>
+            <a href="{{ url_for('enroll') }}">Enroll New Students</a>
+            <a href="{{ url_for('timetables') }}">Timetables</a>
+
+        </div>
+
+        <div class="content">
+            <form id="enroll-form" onsubmit="submitForm(event)">
+                <div class="settings-form">
+                    <div class="form-section">
+                        <h3>Student Information</h3>
+                        <label for="first-name">First Name</label>
+                        <input type="text" id="first-name" name="first_name" required>
+
+                        <label for="last-name">Last Name</label>
+                        <input type="text" id="last-name" name="last_name" required>
+
+                        <label for="student-ref-number">Student Reference Number</label>
+                        <input type="text" id="student-ref-number" name="student_ref_number" required>
+
+                        <label for="index-number">Index Number</label>
+                        <input type="text" id="index-number" name="index_number" required>
+
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+
+                        <label for="level">Level</label>
+                        <select id="level" name="level" required>
+                            <option value="" disabled selected>Select Level</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                            <option value="300">300</option>
+                            <option value="400">400</option>
+                        </select>
+
+                        <label for="course">Course</label>
+                        <select id="course" name="course" required>
+                            <option value="" disabled selected>Select Course</option>
+                            <option value="Computer Science">Computer Science</option>
+                            <option value="Actuarial Science">Actuarial Science</option>
+                            <option value="Mathematics">Mathematics</option>
+                        </select>
+                    </div>
+
+                    <div class="camera-section">
+                        <h3>Capture or Upload Face</h3>
+                        <div class="camera-box">
+                            <video id="webcam" autoplay playsinline></video>
+                            <canvas id="snapshot" width="640" height="480" style="display: none;"></canvas>
+                        </div>
+                        <div class="button-group">
+                            <button type="button" class="btn-secondary" onclick="startCamera()">Start Camera</button>
+                            <button type="button" class="btn-primary" onclick="captureImage()">Capture</button>
+                            <label class="btn-file-upload">
+                                Upload Photo
+                                <input type="file" id="photo-upload" accept="image/*" onchange="handlePhotoUpload(event)">
+                            </label>
+                        </div>
+                        <div class="preview-container" id="preview-container" style="display: none;">
+                            <h4>Captured or Uploaded Preview</h4>
+                            <img id="preview-img" alt="Preview">
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" id="captured-image" name="captured_image">
+                <div style="margin-top: 20px;">
+                    <button type="submit" class="btn-primary">Submit Enrollment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleDropdown() {
+            const dropdown = document.getElementById("user-dropdown");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+
+        let videoElement = document.getElementById('webcam');
+        let canvas = document.getElementById('snapshot');
+        let stream = null;
+
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                videoElement.srcObject = stream;
+            } catch (err) {
+                alert("Could not access camera.");
+                console.error(err);
+            }
+        }
+
+        function captureImage() {
+            if (!stream) return alert("Camera not started.");
+            const context = canvas.getContext('2d');
+            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            const imageData = canvas.toDataURL('image/jpeg');
+            document.getElementById('preview-img').src = imageData;
+            document.getElementById('captured-image').value = imageData;
+            document.getElementById('preview-container').style.display = 'block';
+
+            // Stop stream
+            stream.getTracks().forEach(track => track.stop());
+            videoElement.srcObject = null;
+            stream = null;
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageData = e.target.result;
+                document.getElementById('preview-img').src = imageData;
+                document.getElementById('captured-image').value = imageData;
+                document.getElementById('preview-container').style.display = 'block';
+
+                // Stop camera stream if active
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    videoElement.srcObject = null;
+                    stream = null;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function submitForm(event) {
+            event.preventDefault();
+            const form = document.getElementById('enroll-form');
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => data[key] = value);
+
+            try {
+                const res = await fetch('/enroll', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                alert(result.message);
+                if (res.ok) {
+                    form.reset();
+                    document.getElementById('preview-container').style.display = 'none';
+                    document.getElementById('photo-upload').value = ''; // Reset file input
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Enrollment failed.");
+            }
+        }
+    </script>
+</body>
+
+</html>

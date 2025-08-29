@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetables - Facial Recognition System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f4f4;
+        }
+        header {
+            background: #fff;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+        }
+        header h1 {
+            font-size: 20px;
+            color: #333;
+            margin: 0;
+            text-align: center;
+        }
+        .user-menu {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .user-icon {
+            width: 40px;
+            height: 40px;
+            background: grey;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            position: relative;
+        }
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            padding: 5px;
+            z-index: 1000;
+        }
+        .dropdown a {
+            display: block;
+            text-decoration: none;
+            color: black;
+            font-size: small;
+            padding: 5px 20px;
+            white-space: nowrap;
+        }
+        .dropdown a:hover {
+            background: #f0f0f0;
+        }
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 20px 40px;
+            display: flex;
+            gap: 20px;
+        }
+        .sidebar {
+            width: 200px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .sidebar h3 {
+            font-size: 16px;
+            color: #333;
+            margin: 0 0 15px;
+        }
+        .sidebar a {
+            display: block;
+            text-decoration: none;
+            color: #555;
+            font-size: 14px;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background: #f0f0f0;
+            color: #333;
+            font-weight: bold;
+        }
+        .content {
+            flex: 1;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .timetable-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .timetable-table th, .timetable-table td {
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            text-align: left;
+            font-size: 14px;
+        }
+        .timetable-table th {
+            background: #f0f0f0;
+            font-weight: bold;
+            color: #333;
+        }
+        .timetable-table td input, .timetable-table td select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .timetable-table td button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #333;
+            color: white;
+            font-size: 14px;
+        }
+        .timetable-table td button:hover {
+            background: #555;
+        }
+        .class-checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-left: -30px;
+        }
+        .class-checkboxes label {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            margin-left: 10px;
+            padding-left: 20px;
+        }
+        .class-checkboxes input[type="checkbox"] {
+            margin-right: -5px;
+        }
+        .btn {
+            padding: 1px 1px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            background: #333;
+            color: white;
+            margin-bottom: 680px;
+            display: inline-block;
+            width: auto;
+        }
+        .btn:hover {
+            background: #555;
+        }
+        .message {
+            margin: 10px 0;
+            font-size: 14px;
+            color: #2e7d32;
+            display: none;
+        }
+        .message.error {
+            color: #d32f2f;
+        }
+    </style>
+    <script>
+        function toggleDropdown() {
+            let dropdown = document.getElementById("user-dropdown");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+
+        function editRow(button, courseCode) {
+            let row = button.closest('tr');
+            let inputs = row.querySelectorAll('input:not([type="checkbox"])');
+            let select = row.querySelector('select');
+            let checkboxes = row.querySelectorAll('input[type="checkbox"]');
+            inputs.forEach(input => {
+                input.disabled = false;
+                input.style.background = '#fff';
+            });
+            select.disabled = false;
+            select.style.background = '#fff';
+            checkboxes.forEach(checkbox => {
+                checkbox.disabled = false;
+            });
+            button.innerText = 'Save';
+            button.onclick = () => saveRow(button, courseCode);
+        }
+
+        function saveRow(button, courseCode) {
+            let row = button.closest('tr');
+            let inputs = row.querySelectorAll('input:not([type="checkbox"])');
+            let select = row.querySelector('select');
+            let checkboxes = row.querySelectorAll('input[type="checkbox"]:checked');
+            let selectedClasses = Array.from(checkboxes).map(checkbox => checkbox.value);
+            let data = {
+                course_code: courseCode,
+                course_name: inputs[0].value,
+                class_code: selectedClasses,
+                exam_day: select.value,
+                exam_time: inputs[1].value
+            };
+            fetch('/save_timetable', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                let message = document.getElementById('message');
+                if (result.status === 'success') {
+                    message.innerText = 'Timetable updated successfully!';
+                    message.className = 'message';
+                    message.style.display = 'block';
+                    inputs.forEach(input => {
+                        input.disabled = true;
+                        input.style.background = '#f0f0f0';
+                    });
+                    select.disabled = true;
+                    select.style.background = '#f0f0f0';
+                    checkboxes.forEach(checkbox => {
+                        checkbox.disabled = true;
+                    });
+                    button.innerText = 'Edit';
+                    button.onclick = () => editRow(button, courseCode);
+                } else {
+                    message.innerText = 'Error updating timetable: ' + result.message;
+                    message.className = 'message error';
+                    message.style.display = 'block';
+                }
+                setTimeout(() => {
+                    message.style.display = 'none';
+                }, 3000);
+            })
+            .catch(error => {
+                let message = document.getElementById('message');
+                message.innerText = 'Error updating timetable: ' + error;
+                message.className = 'message error';
+                message.style.display = 'block';
+                setTimeout(() => {
+                    message.style.display = 'none';
+                }, 3000);
+            });
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Timetables - Facial Recognition System</h1>
+        <div class="user-menu">
+            <div class="user-icon" onclick="toggleDropdown()">👤</div>
+            <div class="dropdown" id="user-dropdown">
+                <a href="{{ url_for('admin_logout') }}">Logout</a>
+            </div>
+        </div>
+    </header>
+    <div class="dashboard">
+        <div class="sidebar">
+            <h3>Admin Menu</h3>
+            <a href="{{ url_for('overview') }}">Overview</a>
+            <a href="{{ url_for('students') }}">Students</a>
+            <a href="{{ url_for('system_stats') }}">System Stats</a>
+            <a href="{{ url_for('enroll') }}">Enroll New Students</a>
+            <a href="{{ url_for('timetables') }}">Timetables</a>
+        </div>
+        <div class="content">
+            <div id="message" class="message"></div>
+            <table class="timetable-table">
+                <thead>
+                    <tr>
+                        <th>Course Name</th>
+                        <th>Class Codes</th>
+                        <th>Exam Day</th>
+                        <th>Time</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="text" value="Computer Networks" disabled></td>
+                        <td>
+                            <div class="class-checkboxes">
+                                <label><input type="checkbox" value="SF1" checked disabled>SF1</label>
+                                <label><input type="checkbox" value="SF7" disabled>SF7</label>
+                                <label><input type="checkbox" value="SF8" disabled>SF8</label>
+                                <label><input type="checkbox" value="SF19" disabled>SF19</label>
+                                <label><input type="checkbox" value="SF20" disabled>SF20</label>
+                            </div>
+                        </td>
+                        <td>
+                            <select disabled>
+                                <option value="Monday" selected>Monday</option>
+                                <option value="Tuesday">Tuesday</option>
+                                <option value="Wednesday">Wednesday</option>
+                                <option value="Thursday">Thursday</option>
+                                <option value="Friday">Friday</option>
+                            </select>
+                        </td>
+                        <td><input type="time" value="09:00" disabled></td>
+                        <td><button onclick="editRow(this, 'CSM 478')">Edit</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="Fundamentals of Entrepreneurship" disabled></td>
+                        <td>
+                            <div class="class-checkboxes">
+                                <label><input type="checkbox" value="SF1" disabled>SF1</label>
+                                <label><input type="checkbox" value="SF7" checked disabled>SF7</label>
+                                <label><input type="checkbox" value="SF8" disabled>SF8</label>
+                                <label><input type="checkbox" value="SF19" disabled>SF19</label>
+                                <label><input type="checkbox" value="SF20" disabled>SF20</label>
+                            </div>
+                        </td>
+                        <td>
+                            <select disabled>
+                                <option value="Monday">Monday</option>
+                                <option value="Tuesday" selected>Tuesday</option>
+                                <option value="Wednesday">Wednesday</option>
+                                <option value="Thursday">Thursday</option>
+                                <option value="Friday">Friday</option>
+                            </select>
+                        </td>
+                        <td><input type="time" value="11:00" disabled></td>
+                        <td><button onclick="editRow(this, 'MCS 472')">Edit</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="Information Systems II" disabled></td>
+                        <td>
+                            <div class="class-checkboxes">
+                                <label><input type="checkbox" value="SF1" disabled>SF1</label>
+                                <label><input type="checkbox" value="SF7" disabled>SF7</label>
+                                <label><input type="checkbox" value="SF8" checked disabled>SF8</label>
+                                <label><input type="checkbox" value="SF19" disabled>SF19</label>
+                                <label><input type="checkbox" value="SF20" disabled>SF20</label>
+                            </div>
+                        </td>
+                        <td>
+                            <select disabled>
+                                <option value="Monday">Monday</option>
+                                <option value="Tuesday">Tuesday</option>
+                                <option value="Wednesday" selected>Wednesday</option>
+                                <option value="Thursday">Thursday</option>
+                                <option value="Friday">Friday</option>
+                            </select>
+                        </td>
+                        <td><input type="time" value="13:00" disabled></td>
+                        <td><button onclick="editRow(this, 'CSM 487')">Edit</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="Introduction to Compilers" disabled></td>
+                        <td>
+                            <div class="class-checkboxes">
+                                <label><input type="checkbox" value="SF1" disabled>SF1</label>
+                                <label><input type="checkbox" value="SF7" disabled>SF7</label>
+                                <label><input type="checkbox" value="SF8" disabled>SF8</label>
+                                <label><input type="checkbox" value="SF19" checked disabled>SF19</label>
+                                <label><input type="checkbox" value="SF20" disabled>SF20</label>
+                            </div>
+                        </td>
+                        <td>
+                            <select disabled>
+                                <option value="Monday">Monday</option>
+                                <option value="Tuesday">Tuesday</option>
+                                <option value="Wednesday">Wednesday</option>
+                                <option value="Thursday" selected>Thursday</option>
+                                <option value="Friday">Friday</option>
+                            </select>
+                        </td>
+                        <td><input type="time" value="10:00" disabled></td>
+                        <td><button onclick="editRow(this, 'CSM 484')">Edit</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="Computer Security" disabled></td>
+                        <td>
+                            <div class="class-checkboxes">
+                                <label><input type="checkbox" value="SF1" disabled>SF1</label>
+                                <label><input type="checkbox" value="SF7" disabled>SF7</label>
+                                <label><input type="checkbox" value="SF8" disabled>SF8</label>
+                                <label><input type="checkbox" value="SF19" disabled>SF19</label>
+                                <label><input type="checkbox" value="SF20" checked disabled>SF20</label>
+                            </div>
+                        </td>
+                        <td>
+                            <select disabled>
+                                <option value="Monday">Monday</option>
+                                <option value="Tuesday">Tuesday</option>
+                                <option value="Wednesday">Wednesday</option>
+                                <option value="Thursday">Thursday</option>
+                                <option value="Friday" selected>Friday</option>
+                            </select>
+                        </td>
+                        <td><input type="time" value="14:00" disabled></td>
+                        <td><button onclick="editRow(this, 'CSM 494')">Edit</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

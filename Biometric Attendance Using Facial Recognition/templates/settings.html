@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Facial Recognition System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .settings-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .settings-section {
+            margin-bottom: 20px;
+        }
+        .settings-section h2 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .form-group input[type="number"] {
+            width: 100px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>System Settings</h1>
+    </header>
+    <div class="settings-container">
+        <form id="settings-form">
+            <div class="settings-section">
+                <h2>Face Recognition Settings</h2>
+                <div class="form-group">
+                    <label for="recognition-threshold">Recognition Threshold (0.0 - 1.0):</label>
+                    <input type="number" id="recognition-threshold" name="recognition_threshold" step="0.1" min="0.0" max="1.0" value="0.7">
+                </div>
+                <div class="form-group">
+                    <label for="cooldown-period">Attendance Cooldown (minutes):</label>
+                    <input type="number" id="cooldown-period" name="cooldown_period" min="1" max="60" value="30">
+                </div>
+            </div>
+            <div class="settings-section">
+                <h2>Camera Settings</h2>
+                <div class="form-group">
+                    <label for="camera-resolution">Camera Resolution:</label>
+                    <select id="camera-resolution" name="camera_resolution">
+                        <option value="1920x1080">1920x1080 (Full HD)</option>
+                        <option value="1280x720">1280x720 (HD)</option>
+                        <option value="640x480">640x480 (VGA)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="frame-rate">Frame Rate (fps):</label>
+                    <input type="number" id="frame-rate" name="frame_rate" min="10" max="60" value="30">
+                </div>
+            </div>
+            <div class="settings-section">
+                <h2>System Preferences</h2>
+                <div class="form-group">
+                    <label for="auto-start-camera">Auto-Start Camera on Load:</label>
+                    <select id="auto-start-camera" name="auto_start_camera">
+                        <option value="false">No</option>
+                        <option value="true">Yes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="notification-sound">Enable Notification Sound:</label>
+                    <select id="notification-sound" name="notification_sound">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit">Save Settings</button>
+        </form>
+        <div id="message" class="message" style="display: none;"></div>
+        <a href="/" class="back-link">Back to Dashboard</a>
+    </div>
+
+    <script>
+        document.getElementById('settings-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const settings = Object.fromEntries(formData);
+
+            try {
+                const response = await fetch('/save_settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                });
+                const result = await response.json();
+                const messageDiv = document.getElementById('message');
+                messageDiv.style.display = 'block';
+                if (response.ok) {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = result.message || 'Settings saved successfully!';
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = result.message || 'Failed to save settings.';
+                }
+            } catch (error) {
+                const messageDiv = document.getElementById('message');
+                messageDiv.style.display = 'block';
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Error saving settings: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

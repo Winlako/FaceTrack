@@ -1,0 +1,167 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: white;
+    color: black;
+    padding: 15px 20px;
+    font-size: 20px;
+    font-weight: bold;
+    border-bottom: 2px solid #ddd;
+    text-align: left;
+}
+
+.dashboard {
+    width: 70%;
+    height: 750px;
+    margin: 20px auto;
+    background: white;
+    padding: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+h2 {
+    text-align: left;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.tab {
+    padding: 10px 15px;
+    border: none;
+    background: #e0e0e0;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.tab.active {
+    background: black;
+    color: white;
+}
+
+.content {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.recognition-panel, .result-panel {
+    width: 48%;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    text-align: left;
+    height: 500px;
+}
+
+.recognition-panel p,
+.result-panel p {
+    color: gray;
+}
+
+.camera-frame {
+    background: #ddd;
+    height: 350px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 15px 0;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.camera-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+    border-radius: 10px;
+    position: absolute;
+}
+
+.activate-btn {
+    position: absolute;
+    z-index: 1;
+    background: black;
+    color: white;
+}
+
+.buttons {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Reset button style */
+.reset-btn {
+    background: lightgray;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.reset-btn:active {
+    background: black;
+    color: white;
+}
+
+.result-box {
+    background: #f0f0f0;
+    padding: 40px;
+    text-align: center;
+    border-radius: 10px;
+    height: 270px;
+}
+
+.result-box img {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 10px;
+    border-radius: 50%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    background: #ccc;
+}
+
+.actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn {
+    padding: 10px 15px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.identify-btn {
+    background: gray;
+    color: white;
+}
+
+.settings-btn {
+    background: white;
+    border: 1px solid black;
+}
+
+.enroll-btn {
+    background: black;
+    color: white;
+}

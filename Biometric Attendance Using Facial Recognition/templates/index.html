@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facial Recognition System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .user-menu {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .user-icon {
+            width: 40px;
+            height: 40px;
+            background: grey;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            position: relative;
+        }
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            padding: 5px;
+        }
+        .dropdown a {
+            display: block;
+            text-decoration: none;
+            color: black;
+            font-size: small;
+            padding: 5px 20px;
+            white-space: nowrap;
+        }
+        .dropdown a:hover {
+            background: #f0f0f0;
+        }
+        .result-box {
+            text-align: center;
+        }
+        .result-box p {
+            margin: 5px 0;
+        }
+        .student-info {
+            font-size: 14px;
+            color: #333;
+        }
+        .student-info span {
+            font-weight: bold;
+        }
+        .attendance-message {
+            font-size: 14px;
+            color: #d32f2f; /* Red for error message */
+        }
+        .attendance-message.success {
+            color: #2e7d32; /* Green for success */
+        }
+    </style>
+    <script>
+        function changeTab(tabName) {
+            let routes = {
+                "Recognition": "/",
+                "Activity": "/activity"
+            };
+            window.location.href = routes[tabName] || "/";
+        }
+
+        let pollingInterval = null;
+
+        function startCamera() {
+            fetch('/start_camera', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    if (data.status === "Camera started") {
+                        let videoStream = document.getElementById("video-stream");
+                        let activateBtn = document.getElementById("activate-btn");
+                        videoStream.src = "/video_feed";
+                        videoStream.style.display = "block";
+                        activateBtn.style.display = "none";
+                        startPolling();
+                    }
+                });
+        }
+
+        function stopCamera() {
+            fetch('/stop_camera', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    let videoStream = document.getElementById("video-stream");
+                    let activateBtn = document.getElementById("activate-btn");
+                    videoStream.src = "";
+                    videoStream.style.display = "none";
+                    activateBtn.style.display = "block";
+                    stopPolling();
+                    resetResultPanel();
+                });
+        }
+
+        function resetCamera() {
+            let resetBtn = document.querySelector(".reset-btn");
+            resetBtn.style.background = "black";
+            resetBtn.style.color = "white";
+            setTimeout(() => {
+                resetBtn.style.background = "lightgray";
+                resetBtn.style.color = "black";
+            }, 300);
+            stopCamera();
+        }
+        
+        function toggleDropdown() {
+            let dropdown = document.getElementById("user-dropdown");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+
+        function startPolling() {
+            if (!pollingInterval) {
+                pollingInterval = setInterval(fetchRecognitionResult, 1000);
+            }
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        function resetResultPanel() {
+            let userImage = document.getElementById("user-placeholder");
+            let resultText = document.getElementById("result-text");
+            let studentRefNumber = document.getElementById("student-ref-number");
+            let indexNumber = document.getElementById("index-number");
+            let course = document.getElementById("course");
+            let level = document.getElementById("level");
+            let status = document.getElementById("status");
+            let recognitionTime = document.getElementById("recognition-time");
+            let recognitionDate = document.getElementById("recognition-date");
+            let attendanceMessage = document.getElementById("attendance-message");
+            let assignedClass = document.getElementById("assigned-class");
+            let resultSubtext = document.getElementById("result-subtext");
+            userImage.src = "{{ url_for('static', filename='user-placeholder.jpg') }}";
+            resultText.innerText = "Waiting for facial recognition to start";
+            studentRefNumber.innerText = "";
+            indexNumber.innerText = "";
+            course.innerText = "";
+            level.innerText = "";
+            status.innerText = "";
+            recognitionTime.innerText = "";
+            recognitionDate.innerText = "";
+            attendanceMessage.innerText = "";
+            assignedClass.innerText = "";
+            attendanceMessage.className = "attendance-message";
+            resultSubtext.innerText = "Click 'Activate Camera'";
+        }
+
+        function fetchRecognitionResult() {
+            fetch('/get_recognition_result')
+                .then(response => response.json())
+                .then(data => {
+                    let userImage = document.getElementById("user-placeholder");
+                    let resultText = document.getElementById("result-text");
+                    let studentRefNumber = document.getElementById("student-ref-number");
+                    let indexNumber = document.getElementById("index-number");
+                    let course = document.getElementById("course");
+                    let level = document.getElementById("level");
+                    let status = document.getElementById("status");
+                    let recognitionTime = document.getElementById("recognition-time");
+                    let recognitionDate = document.getElementById("recognition-date");
+                    let attendanceMessage = document.getElementById("attendance-message");
+                    let assignedClass = document.getElementById("assigned-class");
+                    let resultSubtext = document.getElementById("result-subtext");
+                    
+                    if (data.name && data.image) {
+                        userImage.src = `data:image/jpeg;base64,${data.image}`;
+                        resultText.innerText = `Recognized: ${data.name}`;
+                        studentRefNumber.innerText = `Student Reference Number: ${data.student_ref_number || 'N/A'}`;
+                        indexNumber.innerText = `Index Number: ${data.index_number || 'N/A'}`;
+                        course.innerText = `Course: ${data.course || 'N/A'}`;
+                        level.innerText = `Level: ${data.level || 'N/A'}`;
+                        status.innerText = `Status: ${data.status || 'N/A'}`;
+                        recognitionTime.innerText = `Time: ${data.recognition_time || 'N/A'}`;
+                        recognitionDate.innerText = `Date: ${data.recognition_date || 'N/A'}`;
+                        attendanceMessage.innerText = data.attendance_message || '';
+                        assignedClass.innerText = `Assigned Class: ${data.assigned_class || 'N/A'}`;
+                        attendanceMessage.className = `attendance-message ${data.attendance_message === 'Attendance recorded' ? 'success' : ''}`;
+                        resultSubtext.innerText = "";
+                    } else {
+                        userImage.src = "{{ url_for('static', filename='user-placeholder.jpg') }}";
+                        resultText.innerText = "No face recognized";
+                        studentRefNumber.innerText = "";
+                        indexNumber.innerText = "";
+                        course.innerText = "";
+                        level.innerText = "";
+                        status.innerText = "";
+                        recognitionTime.innerText = "";
+                        recognitionDate.innerText = "";
+                        attendanceMessage.innerText = "";
+                        assignedClass.innerText = "";
+                        attendanceMessage.className = "attendance-message";
+                        resultSubtext.innerText = "Please position your face in the frame";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching recognition result:', error);
+                });
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>FaceTrack Facial Recognition System</h1>
+        <div class="user-menu">
+            <div class="user-icon" onclick="toggleDropdown()">👤</div>
+            <div class="dropdown" id="user-dropdown">
+                <a href="/admin_login">Sign in as admin</a>
+            </div>
+        </div>
+    </header>
+    
+    <div class="dashboard">
+        <h2>Facial Recognition Dashboard</h2>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="changeTab('Recognition')">Recognition</button>
+            <button class="tab" onclick="changeTab('Activity')">Activity</button>
+        </div>
+
+        <div class="content">
+            <div class="recognition-panel">
+                <h3>Facial Recognition</h3>
+                <p>Position your face in the frame for identification</p>
+                <div class="camera-frame">
+                    <button id="activate-btn" class="btn activate-btn" onclick="startCamera()">📷 Activate Camera</button>
+                    <img id="video-stream" src="" alt="Camera Feed">
+                </div>
+                <div class="buttons">
+                    <button class="btn reset-btn" onclick="resetCamera()">Reset</button>
+                </div>
+            </div>
+
+            <div class="result-panel">
+                <h3>Recognition Results</h3>
+                <p>Student information will appear here after successful identification</p>
+                <div class="result-box">
+                    <img id="user-placeholder" src="{{ url_for('static', filename='user-placeholder.jpg') }}" alt="User Placeholder">
+                    <p id="result-text">Waiting for facial recognition to start</p>
+                    <p id="student-ref-number" class="student-info"></p>
+                    <p id="index-number" class="student-info"></p>
+                    <p id="course" class="student-info"></p>
+                    <p id="level" class="student-info"></p>
+                    <p id="status" class="student-info"></p>
+                    <p id="recognition-time" class="student-info"></p>
+                    <p id="recognition-date" class="student-info"></p>
+                    <p id="assigned-class" class="student-info"></p>
+                    <p id="attendance-message" class="attendance-message"></p>
+                    <p id="result-subtext">Click "Activate Camera"</p>
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <button class="btn settings-btn" onclick="window.location.href='/settings'">Settings</button>
+        </div>
+    </div>
+</body>
+</html>

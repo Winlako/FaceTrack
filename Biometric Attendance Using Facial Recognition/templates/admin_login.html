@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        .login-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            width: 350px;
+        }
+        .login-container h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .login-container p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+        input {
+            width: 95%;
+            padding: 10px;
+            margin: 5px 0 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .forgot-password {
+            float: right;
+            font-size: 12px;
+            color: #007BFF;
+            text-decoration: none;
+        }
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+        button {
+            background-color: black;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #333;
+        }
+        .back-arrow {
+            display: inline-block;
+            font-size: 20px;
+            color: black;
+            cursor: pointer;
+            margin-bottom: -20px;
+            text-decoration: none;
+        }
+        .back-arrow:hover {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <a class="back-arrow" href="/">⬅</a>
+    <h2>Sign in</h2>
+    <p>Enter your credentials to access the facial recognition system</p>
+
+    {% if error %}
+        <div class="error-message">{{ error }}</div>
+    {% endif %}
+
+    <form action="/admin_login" method="POST">
+        <label for="email">Email</label>
+        <input type="text" name="username" placeholder="admin@example.com" required>
+
+        <label for="password">
+            Password 
+        </label>
+        <input type="password" name="password" placeholder="Enter your password" required>
+
+        <button type="submit">Sign in</button>
+    </form>
+</div>
+
+</body>
+</html>

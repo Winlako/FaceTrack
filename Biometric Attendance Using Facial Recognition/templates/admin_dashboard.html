@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Facial Recognition System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f4f4;
+        }
+        header {
+            background: #fff;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+        }
+        header h1 {
+            font-size: 20px;
+            color: #333;
+            margin: 0;
+            text-align: center;
+        }
+        .user-menu {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .user-icon {
+            width: 40px;
+            height: 40px;
+            background: grey;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            position: relative;
+        }
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            padding: 5px;
+            z-index: 1000;
+        }
+        .dropdown a {
+            display: block;
+            text-decoration: none;
+            color: black;
+            font-size: small;
+            padding: 5px 20px;
+            white-space: nowrap;
+        }
+        .dropdown a:hover {
+            background: #f0f0f0;
+        }
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 20px 40px;
+            display: flex;
+            gap: 20px;
+        }
+        .sidebar {
+            width: 200px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .sidebar h3 {
+            font-size: 16px;
+            color: #333;
+            margin: 0 0 15px;
+        }
+        .sidebar a {
+            display: block;
+            text-decoration: none;
+            color: #555;
+            font-size: 14px;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background: #f0f0f0;
+            color: #333;
+            font-weight: bold;
+        }
+        .content {
+            flex: 1;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .recognition-panel, .result-panel {
+            flex: 1;
+            min-width: 300px;
+        }
+        .result-panel {
+            padding: 15px;
+            height: 510px;
+        }
+        .result-box {
+            text-align: center;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fff;
+            max-width: 350px;
+            margin: 0 auto;
+            height: 300px;
+        }
+        .result-box img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+        .result-box p {
+            margin: 6px 0;
+            font-size: 15px;
+            color: #333;
+        }
+        .result-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+        .student-info {
+            font-size: 14px;
+            color: #555;
+        }
+        .student-info span {
+            font-weight: bold;
+            color: #333;
+        }
+        .attendance-message {
+            font-size: 14px;
+            font-weight: bold;
+            color: #d32f2f;
+            margin-top: 8px;
+        }
+        .attendance-message.success {
+            color: #2e7d32;
+        }
+        .result-subtext {
+            font-size: 13px;
+            color: #777;
+            font-style: italic;
+        }
+        .camera-frame {
+            position: relative;
+            margin: 10px auto;
+            text-align: center;
+        }
+        .camera-frame img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .activate-btn {
+            background: #333;
+            color: white;
+            display: inline-block;
+        }
+        .reset-btn {
+            background: lightgray;
+            color: black;
+            margin-top: 10px;
+        }
+        .loading {
+            display: none;
+            font-size: 14px;
+            color: #555;
+            margin-top: 10px;
+        }
+        @media (max-width: 768px) {
+            .dashboard {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .content {
+                flex-direction: column;
+            }
+            .result-box {
+                max-width: 100%;
+            }
+        }
+    </style>
+    <script>
+        function toggleDropdown() {
+            let dropdown = document.getElementById("user-dropdown");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+
+        let pollingInterval = null;
+
+        function startCamera() {
+            document.getElementById("loading").style.display = "block";
+            fetch('/start_camera', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    if (data.status === "Camera started") {
+                        let videoStream = document.getElementById("video-stream");
+                        let activateBtn = document.getElementById("activate-btn");
+                        let loading = document.getElementById("loading");
+                        videoStream.src = "/video_feed";
+                        videoStream.style.display = "block";
+                        activateBtn.style.display = "none";
+                        loading.style.display = "none";
+                        startPolling();
+                    }
+                });
+        }
+
+        function stopCamera() {
+            fetch('/stop_camera', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    let videoStream = document.getElementById("video-stream");
+                    let activateBtn = document.getElementById("activate-btn");
+                    let loading = document.getElementById("loading");
+                    videoStream.src = "";
+                    videoStream.style.display = "none";
+                    activateBtn.style.display = "block";
+                    loading.style.display = "none";
+                    stopPolling();
+                    resetResultPanel();
+                });
+        }
+
+        function resetCamera() {
+            let resetBtn = document.querySelector(".reset-btn");
+            resetBtn.style.background = "black";
+            resetBtn.style.color = "white";
+            setTimeout(() => {
+                resetBtn.style.background = "lightgray";
+                resetBtn.style.color = "black";
+            }, 300);
+            stopCamera();
+        }
+
+        function startPolling() {
+            if (!pollingInterval) {
+                pollingInterval = setInterval(fetchRecognitionResult, 1000);
+            }
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        function resetResultPanel() {
+            let userImage = document.getElementById("user-placeholder");
+            let resultText = document.getElementById("result-text");
+            let studentRefNumber = document.getElementById("student-ref-number");
+            let indexNumber = document.getElementById("index-number");
+            let course = document.getElementById("course");
+            let level = document.getElementById("level");
+            let status = document.getElementById("status");
+            let recognitionTime = document.getElementById("recognition-time");
+            let recognitionDate = document.getElementById("recognition-date");
+            let attendanceMessage = document.getElementById("attendance-message");
+            let assignedClass = document.getElementById("assigned-class");
+            let resultSubtext = document.getElementById("result-subtext");
+            userImage.src = "{{ url_for('static', filename='user-placeholder.jpg') }}";
+            resultText.innerText = "Waiting for facial recognition to start";
+            studentRefNumber.innerText = "";
+            indexNumber.innerText = "";
+            course.innerText = "";
+            level.innerText = "";
+            status.innerText = "";
+            recognitionTime.innerText = "";
+            recognitionDate.innerText = "";
+            attendanceMessage.innerText = "";
+            assignedClass.innerText = "";
+            attendanceMessage.className = "attendance-message";
+            resultSubtext.innerText = "Click 'Activate Camera'";
+        }
+
+        function fetchRecognitionResult() {
+            fetch('/get_recognition_result')
+                .then(response => response.json())
+                .then(data => {
+                    let userImage = document.getElementById("user-placeholder");
+                    let resultText = document.getElementById("result-text");
+                    let studentRefNumber = document.getElementById("student-ref-number");
+                    let indexNumber = document.getElementById("index-number");
+                    let course = document.getElementById("course");
+                    let level = document.getElementById("level");
+                    let status = document.getElementById("status");
+                    let recognitionTime = document.getElementById("recognition-time");
+                    let recognitionDate = document.getElementById("recognition-date");
+                    let attendanceMessage = document.getElementById("attendance-message");
+                    let assignedClass = document.getElementById("assigned-class");
+                    let resultSubtext = document.getElementById("result-subtext");
+                    
+                    if (data.name && data.image) {
+                        userImage.src = `data:image/jpeg;base64,${data.image}`;
+                        resultText.innerText = `Recognized: ${data.name}`;
+                        studentRefNumber.innerText = `Student Reference Number: ${data.student_ref_number || 'N/A'}`;
+                        indexNumber.innerText = `Index Number: ${data.index_number || 'N/A'}`;
+                        course.innerText = `Course: ${data.course || 'N/A'}`;
+                        level.innerText = `Level: ${data.level || 'N/A'}`;
+                        status.innerText = `Status: ${data.status || 'N/A'}`;
+                        recognitionTime.innerText = `Time: ${data.recognition_time || 'N/A'}`;
+                        recognitionDate.innerText = `Date: ${data.recognition_date || 'N/A'}`;
+                        attendanceMessage.innerText = data.attendance_message || '';
+                        assignedClass.innerText = `Assigned Class: ${data.assigned_class || 'N/A'}`;
+                        attendanceMessage.className = `attendance-message ${data.attendance_message === 'Attendance recorded' ? 'success' : ''}`;
+                        resultSubtext.innerText = "";
+                    } else {
+                        userImage.src = "{{ url_for('static', filename='user-placeholder.jpg') }}";
+                        resultText.innerText = "No face recognized";
+                        studentRefNumber.innerText = "";
+                        indexNumber.innerText = "";
+                        course.innerText = "";
+                        level.innerText = "";
+                        status.innerText = "";
+                        recognitionTime.innerText = "";
+                        recognitionDate.innerText = "";
+                        attendanceMessage.innerText = "";
+                        assignedClass.innerText = "";
+                        attendanceMessage.className = "attendance-message";
+                        resultSubtext.innerText = "Please position your face in the frame";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching recognition result:', error);
+                });
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Admin Dashboard - Facial Recognition System</h1>
+        <div class="user-menu">
+            <div class="user-icon" onclick="toggleDropdown()">👤</div>
+            <div class="dropdown" id="user-dropdown">
+                <a href="{{ url_for('admin_logout') }}">Logout</a>
+            </div>
+        </div>
+    </header>
+    
+    <div class="dashboard">
+        <div class="sidebar">
+            <h3>Admin Menu</h3>
+            <a href="{{ url_for('overview') }}">Overview</a>
+            <a href="{{ url_for('students') }}">Students</a>
+            <a href="{{ url_for('system_stats') }}">System Stats</a>
+            <a href="{{ url_for('enroll') }}">Enroll New Students</a>
+            <a href="{{ url_for('timetables') }}">Timetables</a>
+        </div>
+        
+        <div class="content">
+            <div class="recognition-panel">
+                <h3>Facial Recognition</h3>
+                <p>Position your face in the frame for identification</p>
+                <div class="camera-frame">
+                    <button id="activate-btn" class="btn activate-btn" onclick="startCamera()">📷 Activate Camera</button>
+                    <img id="video-stream" src="" alt="Camera Feed">
+                    <div id="loading" class="loading">Loading video feed...</div>
+                </div>
+                <div class="buttons">
+                    <button class="btn reset-btn" onclick="resetCamera()">Reset</button>
+                </div>
+            </div>
+
+            <div class="result-panel">
+                <h3>Recognition Results</h3>
+                <p>Student information will appear here after successful identification</p>
+                <div class="result-box">
+                    <img id="user-placeholder" src="{{ url_for('static', filename='user-placeholder.jpg') }}" alt="User Placeholder">
+                    <p id="result-text" class="result-text">Waiting for facial recognition to start</p>
+                    <p id="student-ref-number" class="student-info"><span>Student Reference Number:</span> </p>
+                    <p id="index-number" class="student-info"><span>Index Number:</span> </p>
+                    <p id="course" class="student-info"><span>Course:</span> </p>
+                    <p id="level" class="student-info"><span>Level:</span> </p>
+                    <p id="status" class="student-info"><span>Status:</span> </p>
+                    <p id="recognition-time" class="student-info"><span>Time:</span> </p>
+                    <p id="recognition-date" class="student-info"><span>Date:</span> </p>
+                    <p id="assigned-class" class="student-info"><span>Assigned Class:</span> </p>
+                    <p id="attendance-message" class="attendance-message"></p>
+                    <p id="result-subtext" class="result-subtext">Click 'Activate Camera'</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

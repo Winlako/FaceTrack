@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .activity-container {
+            display: flex;
+            flex-direction: column; 
+            gap: 15px; 
+            align-items: center; 
+            margin-top: 20px;
+            padding: 0 20px; 
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .activity-box {
+            background: linear-gradient(135deg, #ffffff, #f0f4f8); 
+            border: 1px solid #d1d5db;
+            border-radius: 10px; 
+            padding: 12px; 
+            width: 100%;
+            max-width: 800px; 
+            min-height: 100px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1); 
+            display: flex; 
+            align-items: center; 
+            transition: transform 0.2s, box-shadow 0.2s; 
+            margin: 0 auto;
+            margin-top: 20px;
+            margin-left: -250px;
+        }
+        .activity-box:hover {
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15); 
+        }
+        .activity-box img {
+            width: 70px; 
+            height: 70px;
+            border-radius: 50%;
+            margin-right: 20px; 
+            border: 2px solid #e5e7eb;
+        }
+        .activity-box .left-info {
+            flex: 1; 
+            margin-right: 10px; 
+        }
+        .activity-box .right-info {
+            flex: 1; 
+        }
+        .activity-box p {
+            margin: 4px 0; 
+            font-size: 14px; 
+            color: #1f2937; 
+            font-family: 'Arial', sans-serif; 
+        }
+        .activity-box p span {
+            font-weight: 600; 
+            color: #111827; 
+        }
+        .attendance-message {
+            font-size: 14px;
+            font-weight: 500;
+            color: #dc2626; 
+        }
+        .attendance-message.success {
+            color: #15803d; 
+        }
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 400px; 
+            margin: 0 auto;
+            height: 30px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-container input {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            flex: 1;
+        }
+        .search-container button {
+            padding: 8px 16px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .search-container #search-button {
+            background: #333;
+            color: white;
+        }
+        .search-container #search-button:hover {
+            background: #555;
+        }
+        .search-container #download-csv-button {
+            background: #15803d; 
+            color: white;
+        }
+        .search-container #download-csv-button:hover {
+            background: #1a7048; 
+        }
+        .pagination-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .pagination-container button {
+            padding: 8px 12px; 
+            font-size: 16px; 
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            line-height: 1; 
+        }
+        .pagination-container button:hover {
+            background: #555;
+        }
+        .pagination-container button:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
+        .pagination-container span {
+            font-size: 14px;
+            color: #1f2937;
+            font-family: 'Arial', sans-serif;
+        }
+       
+        #activity-container p {
+            text-align: center;
+            font-style: italic;
+            color: #6b7280; 
+        }
+    </style>
+    <script>
+        function changeTab(tabName) {
+            let routes = {
+                "Recognition": "/",
+                "Activity": "/activity",
+            };
+            window.location.href = routes[tabName] || "/";
+        }
+
+        let recognitionHistory = []; 
+        let currentPage = 1;
+        const recordsPerPage = 4;
+
+        function renderActivities(data) {
+            const container = document.getElementById('activity-container');
+            container.innerHTML = ''; 
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="activity-box">
+                        <p>No recognition history available.</p>
+                    </div>
+                `;
+                updatePagination(0);
+                return;
+            }
+
+            // Calculate start and end indices for the current page
+            const startIndex = (currentPage - 1) * recordsPerPage;
+            const endIndex = startIndex + recordsPerPage;
+            const paginatedData = data.slice(startIndex, endIndex);
+
+            paginatedData.forEach(item => {
+                const box = document.createElement('div');
+                box.className = 'activity-box';
+                box.innerHTML = `
+                    <img src="${item.image ? 'data:image/jpeg;base64,' + item.image : '/static/user-placeholder.jpg'}" alt="Student Image">
+                    <div class="left-info">
+                        <p><span>Name:</span> ${item.name ? item.name : 'N/A'}</p>
+                        <p><span>Student Reference Number:</span> ${item.student_ref_number ? item.student_ref_number : 'N/A'}</p>
+                        <p><span>Index Number:</span> ${item.index_number ? item.index_number : 'N/A'}</p>
+                        <p><span>Course:</span> ${item.course ? item.course : 'N/A'}</p>
+                        <p><span>Level:</span> ${item.level ? item.level : 'N/A'}</p>
+                    </div>
+                    <div class="right-info">
+                        <p><span>Status:</span> ${item.status ? item.status : 'N/A'}</p>
+                        <p><span>Time:</span> ${item.recognition_time ? item.recognition_time : 'N/A'}</p>
+                        <p><span>Date:</span> ${item.recognition_date ? item.recognition_date : 'N/A'}</p>
+                        <p class="attendance-message ${item.attendance_message === 'Attendance recorded' ? 'success' : ''}">
+                            ${item.attendance_message ? item.attendance_message : 'N/A'}
+                        </p>
+                    </div>
+                `;
+                container.appendChild(box);
+            });
+
+            updatePagination(data.length);
+        }
+
+        function updatePagination(totalRecords) {
+            const totalPages = Math.ceil(totalRecords / recordsPerPage);
+            const paginationContainer = document.getElementById('pagination-container');
+            const pageInfo = document.getElementById('page-info');
+            const prevButton = document.getElementById('prev-arrow');
+            const nextButton = document.getElementById('next-arrow');
+
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages || 1}`;
+            prevButton.disabled = currentPage === 1;
+            nextButton.disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                const query = document.getElementById('search-input').value;
+                filterActivities(query);
+            }
+        }
+
+        function nextPage() {
+            const totalPages = Math.ceil(recognitionHistory.length / recordsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                const query = document.getElementById('search-input').value;
+                filterActivities(query);
+            }
+        }
+
+        function fetchRecognitionHistory() {
+            fetch('/get_recognition_history')
+                .then(response => response.json())
+                .then(data => {
+                    recognitionHistory = data;
+                    const query = document.getElementById('search-input').value;
+                    filterActivities(query);
+                })
+                .catch(error => {
+                    console.error('Error fetching recognition history:', error);
+                    document.getElementById('activity-container').innerHTML = `
+                        <div class="activity-box">
+                            <p>Error loading activity history.</p>
+                        </div>
+                    `;
+                    updatePagination(0);
+                });
+        }
+
+        function filterActivities(query) {
+            query = query.toLowerCase().trim();
+            const filteredData = recognitionHistory.filter(item => {
+                return (
+                    (item.name && item.name.toLowerCase().includes(query)) ||
+                    (item.student_ref_number && item.student_ref_number.toLowerCase().includes(query)) ||
+                    (item.index_number && item.index_number.toLowerCase().includes(query))
+                );
+            });
+            renderActivities(filteredData);
+        }
+
+        function handleSearch() {
+            currentPage = 1; // Reset to first page on new search
+            const query = document.getElementById('search-input').value;
+            filterActivities(query);
+        }
+
+        function downloadCSV() {
+            window.location.href = '/download_activity_csv';
+        }
+
+        window.onload = function() {
+            fetchRecognitionHistory();
+            setInterval(fetchRecognitionHistory, 5000);
+            document.getElementById('search-button').addEventListener('click', handleSearch);
+            document.getElementById('search-input').addEventListener('input', handleSearch);
+            document.getElementById('download-csv-button').addEventListener('click', downloadCSV);
+            document.getElementById('prev-arrow').addEventListener('click', prevPage);
+            document.getElementById('next-arrow').addEventListener('click', nextPage);
+        };
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Activity</h1>
+    </header>
+    
+    <div class="dashboard">
+        <h2>Activity Dashboard</h2>
+        
+        <div class="tabs">
+            <button class="tab" onclick="changeTab('Recognition')">Recognition</button>
+            <button class="tab active" onclick="changeTab('Activity')">Activity</button>
+        </div>
+
+        <div class="content">
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search by name, student ref number, or index number">
+                <button id="search-button">Search</button>
+                <button id="download-csv-button">Download</button>
+            </div>
+            <div id="activity-container" class="activity-container">
+                <p>Loading activity logs...</p>
+            </div>
+        </div>
+        <div id="pagination-container" class="pagination-container">
+            <button id="prev-arrow">◄</button>
+            <span id="page-info">Page 1 of 1</span>
+            <button id="next-arrow">►</button>
+        </div>
+    </div>
+</body>
+</html>

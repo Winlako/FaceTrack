@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Stats - Facial Recognition System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f4f4;
+        }
+        header {
+            background: #fff;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+        }
+        header h1 {
+            font-size: 20px;
+            color: #333;
+            margin: 0;
+            text-align: center;
+        }
+        .user-menu {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .user-icon {
+            width: 40px;
+            height: 40px;
+            background: grey;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            position: relative;
+        }
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            padding: 5px;
+            z-index: 1000;
+        }
+        .dropdown a {
+            display: block;
+            text-decoration: none;
+            color: black;
+            font-size: small;
+            padding: 5px 20px;
+            white-space: nowrap;
+        }
+        .dropdown a:hover {
+            background: #f0f0f0;
+        }
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 20px 40px;
+            display: flex;
+            gap: 20px;
+        }
+        .sidebar {
+            width: 200px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .sidebar h3 {
+            font-size: 16px;
+            color: #333;
+            margin: 0 0 15px;
+        }
+        .sidebar a {
+            display: block;
+            text-decoration: none;
+            color: #555;
+            font-size: 14px;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: #f0f0f0;
+            color: #333;
+            font-weight: bold;
+        }
+        .content {
+            flex: 1;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 20px;
+            flex-direction: column;
+        }
+       .content h2 {
+    font-size: 24px;
+    color: #333;
+}
+
+       .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    min-width: 800px;
+    min-height: 200px;
+    margin-top: -200px;
+}
+
+        .stat-card {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .stat-card h3 {
+            margin: 0 0 10px;
+            font-size: 16px;
+            color: #555;
+        }
+        .stat-card p {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+            font-weight: bold;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+        .status-online {
+            background: #28a745;
+        }
+        .status-offline {
+            background: #dc3545;
+        }
+        .chart-container {
+            max-width: 600px;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>System Stats - Facial Recognition System</h1>
+        <div class="user-menu">
+            <div class="user-icon" onclick="toggleDropdown()">👤</div>
+            <div class="dropdown" id="user-dropdown">
+                <a href="{{ url_for('admin_logout') }}">Logout</a>
+            </div>
+        </div>
+    </header>
+    <div class="dashboard">
+        <div class="sidebar">
+            <h3>Admin Menu</h3>
+            <a href="{{ url_for('admin_dashboard') }}">Home</a>
+            <a href="{{ url_for('overview') }}">Overview</a>
+            <a href="{{ url_for('students') }}">Students</a>
+            <a href="{{ url_for('system_stats') }}" class="active">System Stats</a>
+            <a href="{{ url_for('enroll') }}">Enroll New Students</a>
+            <a href="{{ url_for('timetables') }}">Timetables</a>
+        </div>
+        <div class="content">
+            <h2>System Stats Dashboard</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Enrolled Students</h3>
+                    <p id="total-students">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Recognitions (Last 24h)</h3>
+                    <p id="recent-recognitions">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Avg. Recognition Time</h3>
+                    <p id="avg-recognition-time">0 ms</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Camera Status</h3>
+                    <p id="camera-status">Offline <span class="status-indicator status-offline"></span></p>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="recognitionChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <script>
+        function toggleDropdown() {
+            let dropdown = document.getElementById("user-dropdown");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+
+        async function fetchSystemStats() {
+            try {
+                // Fetch total students
+                const studentsResponse = await fetch('/get_students');
+                const studentsData = await studentsResponse.json();
+                document.getElementById('total-students').textContent = studentsData.length;
+
+                // Fetch recognition history
+                const historyResponse = await fetch('/get_recognition_history');
+                const historyData = await historyResponse.json();
+                const now = new Date();
+                const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                const recentRecognitions = historyData.filter(entry => {
+                    const recognitionDate = new Date(`${entry.recognition_date} ${entry.recognition_time}`);
+                    return recognitionDate >= last24h;
+                });
+                document.getElementById('recent-recognitions').textContent = recentRecognitions.length;
+
+                // Calculate average recognition time (simulated for now)
+                document.getElementById('avg-recognition-time').textContent = 'N/A';
+
+                // Check camera status
+                const cameraResponse = await fetch('/video_feed', { method: 'HEAD' });
+                const cameraStatus = cameraResponse.ok ? 'Online' : 'Offline';
+                const cameraElement = document.getElementById('camera-status');
+                cameraElement.textContent = `${cameraStatus} `;
+                const cameraIndicator = cameraElement.querySelector('.status-indicator');
+                cameraIndicator.className = `status-indicator ${cameraStatus === 'Online' ? 'status-online' : 'status-offline'}`;
+
+                // Check database status (simulated with a simple endpoint check)
+                const dbResponse = await fetch('/get_students', { method: 'HEAD' });
+                const dbStatus = dbResponse.ok ? 'Online' : 'Offline';
+                const dbElement = document.getElementById('db-status');
+                dbElement.textContent = `${dbStatus} `;
+                const dbIndicator = dbElement.querySelector('.status-indicator');
+                dbIndicator.className = `status-indicator ${dbStatus === 'Online' ? 'status-online' : 'status-offline'}`;
+
+                // Prepare data for recognition chart
+                const hourlyData = Array(24).fill(0);
+                historyData.forEach(entry => {
+                    const recognitionDate = new Date(`${entry.recognition_date} ${entry.recognition_time}`);
+                    if (recognitionDate >= last24h) {
+                        const hour = recognitionDate.getHours();
+                        hourlyData[hour]++;
+                    }
+                });
+
+                // Render chart
+                const ctx = document.getElementById('recognitionChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                        datasets: [{
+                            label: 'Recognitions per Hour',
+                            data: hourlyData,
+                            borderColor: '#007bff',
+                            fill: false,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Number of Recognitions' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Hour of Day' }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching system stats:', error);
+            }
+        }
+
+        // Fetch stats on page load
+        document.addEventListener('DOMContentLoaded', fetchSystemStats);
+    </script>
+</body>
+</html>
